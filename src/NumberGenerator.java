@@ -15,7 +15,7 @@ public class NumberGenerator {
         PrintWriter writer = new PrintWriter("test.in");
         Random random = new Random();
 
-        for(int i = 2; i < 80; i++) {
+        for(int i = 2; i < 35; i++) {
             String word = "";
             for(int j = 0; j < i; j++) {
                 int n = random.nextInt(9);
@@ -24,9 +24,9 @@ public class NumberGenerator {
             writer.println(word);
         }
 
-        for(int i = 0; i < 22; i++) {
+        for(int i = 0; i < 67; i++) {
             String word = "";
-            for(int j = 0; j < 80; j++) {
+            for(int j = 0; j < 35; j++) {
                 int n = random.nextInt(9);
                 word += "" + n;
             }

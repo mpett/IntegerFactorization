@@ -19,7 +19,8 @@ public class Main {
     private final static SecureRandom r = new SecureRandom();
     private static long a,b = 0;
     private static ArrayList<BigInteger> factors;
-    private final static long TIME_LIMIT = 224444444;
+    private final static long TIME_LIMIT = 244444444;
+    private final static long BREAKPOINT = 10;
 
     public static void main(String[] args) {
         if(args.length != 0) {
@@ -51,16 +52,22 @@ public class Main {
                 factors = new ArrayList<BigInteger>();
                 failed = false;
                 BigInteger n = new BigInteger(word);
+                // Input integer is already prime: Stop here.
                 if(n.isProbablePrime(5)) continue;
-                if(word.length() <= 10) factor(n); else factorRho(n);
-                if(failed) continue; else  score++;
+                // Break to Pollard's Rho if input integer is more than 10 digits long.
+                if(word.length() <= BREAKPOINT) factor(n); else factorRho(n);
+                if(failed) {
+                    System.out.println("Test case #" + total + ": Failed");
+                    continue;
+                } else {
+                    System.out.println("Test case #" + total + ": Success! :D");
+                    score++;
+                }
                 continue;
             }
-
             long end = System.nanoTime();
-            long elapsedTime = end - start;
-            double seconds = (double)elapsedTime / 1000000000.0;
-            System.out.println("Managed to factor " + score +  " numbers out of " + total + ".");
+            double seconds = (double)(end - start) / 1000000000.0;
+            System.out.println("\nManaged to factor " + score +  " numbers out of " + total + ".");
             System.out.println("Total time for factoring " + total + " numbers: " + seconds + " seconds.");
             System.out.println("\n------- TEST END --------");
             br.close();
@@ -72,11 +79,10 @@ public class Main {
             failed = false;
             String word = io.getWord();
             BigInteger n = new BigInteger(word);
-            if(n.isProbablePrime(5)) {
-                System.out.println(n + "\n");
-                continue;
-            }
-            if(word.length() <= 10) factor(n); else factorRho(n);
+            // Input integer is already prime: Stop here.
+            if(n.isProbablePrime(5)) { System.out.println(n + "\n"); continue; }
+            // Break to Pollard's Rho if input integer is more than 10 digits long.
+            if(word.length() <= BREAKPOINT) factor(n); else factorRho(n);
             if(failed) { fail(); continue; }
             output(factors);
             continue;
@@ -84,32 +90,19 @@ public class Main {
     }
 
     public static BigInteger pollardRho(BigInteger n) {
-        BigInteger d;
+        BigInteger d = BigInteger.ZERO;
         BigInteger c  = new BigInteger(n.bitLength(), r);
         BigInteger x  = new BigInteger(n.bitLength(), r);
         BigInteger y = x;
-
-        if (n.mod(TWO).compareTo(BigInteger.ZERO) == 0)
-            return TWO;
-
-        x = x.multiply(x).mod(n).add(c).mod(n);
-        y = y.multiply(y).mod(n).add(c).mod(n);
-        y = y.multiply(y).mod(n).add(c).mod(n);
-        d = x.subtract(y).gcd(n);
-
+        if (n.mod(TWO).compareTo(BigInteger.ZERO) == 0) return TWO;
         long startTime = System.nanoTime();
-        while(d.compareTo(BigInteger.ONE) == 0) {
-           if(System.nanoTime() - startTime > TIME_LIMIT) {
-                failed = true;
-                break;
-            }
-
+        do {
+            if(System.nanoTime() - startTime > TIME_LIMIT) { failed = true; break; }
             x = x.multiply(x).mod(n).add(c).mod(n);
             y = y.multiply(y).mod(n).add(c).mod(n);
             y = y.multiply(y).mod(n).add(c).mod(n);
             d = x.subtract(y).gcd(n);
-        }
-
+        } while(d.compareTo(BigInteger.ONE) == 0);
         return d;
     }
 
