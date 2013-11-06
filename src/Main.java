@@ -18,8 +18,10 @@ public class Main {
     private final static BigInteger     TWO  = new BigInteger("2");
     private final static String         TEST_FILE = "test.in";
     private final static double         NANOSECONDS_TO_SECONDS = 1000000000.0;
-    private final static long           TIME_LIMIT = 244444444;
-    private final static int            BREAKPOINT = 10;
+    private final static long           TIME_LIMIT = 224444444;
+    private final static long           TIME_LIMIT_BRENT = 204444444;
+    private final static int            BREAKPOINT_POLLARD = 10;
+    private final static int            BREAKPOINT_BRENT = 200;
     private final static int            CERTAINTY_FACTOR = 20;
     // Fields
     private static Kattio io = new Kattio(System.in, System.out);
@@ -42,36 +44,52 @@ public class Main {
     }
 
     public static void testFactoring() throws IOException {
-            System.out.println("------- TEST MODE -------\n");
-            System.out.println("Factoring...");
-            int score = 0;
-            int total = 0;
-            String word;
-            BufferedReader br = new BufferedReader(new FileReader(TEST_FILE));
-            long start = System.nanoTime();
-            while((word = br.readLine()) != null) {
-                total++;
+        System.out.println("------- TEST MODE -------\n");
+        System.out.println("Factoring...");
+        int score = 0;
+        int total = 0;
+        int omg = 0;
+        String word;
+        BufferedReader br = new BufferedReader(new FileReader(TEST_FILE));
+        long start = System.nanoTime();
+        while((word = br.readLine()) != null) {
+            total++;
+            factors = new ArrayList<BigInteger>();
+            failed = false;
+            BigInteger n = new BigInteger(word);
+            // Input integer is already prime: Stop here.
+            if(n.isProbablePrime(CERTAINTY_FACTOR)) continue;
+            // Break to Pollard's Rho if input integer is more than 10 digits long.
+            if(word.length() <= BREAKPOINT_POLLARD) trialDivision(n); else factorBrent(n);
+
+            boolean tmp = false;
+            if(failed && word.length() >= BREAKPOINT_BRENT) {
+
                 factors = new ArrayList<BigInteger>();
                 failed = false;
-                BigInteger n = new BigInteger(word);
-                // Input integer is already prime: Stop here.
-                if(n.isProbablePrime(CERTAINTY_FACTOR)) continue;
-                // Break to Pollard's Rho if input integer is more than 10 digits long.
-                if(word.length() <= BREAKPOINT) trialDivision(n); else factorRho(n);
-                if(failed) {
-                    testOut("Failed", total);
-                    continue;
-                } else {
-                    testOut("Success! :D", total);
-                    score++;
-                }
+                factorBrent(n);
+                tmp = true;
             }
-            long end = System.nanoTime();
-            double seconds = (double)(end - start) / NANOSECONDS_TO_SECONDS;
-            System.out.println("\nManaged to factor " + score +  " numbers out of " + total + ".");
-            System.out.println("Total time for factoring " + total + " numbers: " + seconds + " seconds.");
-            System.out.println("\n------- TEST END --------");
-            br.close();
+
+            if(!failed && tmp) {
+                System.err.println("OH MY GOD"); omg++;
+            }
+
+            if(failed) {
+                testOut("Failed", total);
+                continue;
+            } else {
+                testOut("Success! :D", total);
+                score++;
+            }
+        }
+        long end = System.nanoTime();
+        double seconds = (double)(end - start) / NANOSECONDS_TO_SECONDS;
+        System.out.println("\nManaged to factor " + score +  " numbers out of " + total + ".");
+        System.out.println("Total time for factoring " + total + " numbers: " + seconds + " seconds.");
+        System.out.println("OMG: " + omg);
+        System.out.println("\n------- TEST END --------");
+        br.close();
     }
 
     public static void kattisFactoring() {
@@ -81,29 +99,39 @@ public class Main {
             String word = io.getWord();
             BigInteger n = new BigInteger(word);
             // Input integer is already prime: Stop here.
-            if(n.isProbablePrime(CERTAINTY_FACTOR)) { System.out.println(n + "\n"); continue; }
+            //if(n.isProbablePrime(CERTAINTY_FACTOR)) { System.out.println(n + "\n"); continue; }
             // Break to Pollard's Rho if input integer is more than 10 digits long.
-            if(word.length() <= BREAKPOINT) trialDivision(n); else factorRho(n);
-            if(failed) { fail(); continue; }
-            output(factors);
-            continue;
+            if(word.length() <= BREAKPOINT_POLLARD) trialDivision(n); else factorRho(n);
+
+            if(failed && word.length() >= BREAKPOINT_BRENT) {
+                failed = false;
+                factors = new ArrayList<BigInteger>();
+                factorBrent(n);
+            }
+
+            if(failed) {
+                fail();
+                continue;
+            } else {
+                output(factors);
+            }
         }
     }
 
     public static BigInteger pollardRho(BigInteger n) {
-        BigInteger d = BigInteger.ZERO;
+        BigInteger d = BigInteger.ONE;
         BigInteger c  = new BigInteger(n.bitLength(), r);
         BigInteger x  = new BigInteger(n.bitLength(), r);
         BigInteger y = x;
         if (n.mod(TWO).compareTo(BigInteger.ZERO) == 0) return TWO;
         long startTime = System.nanoTime();
-        do {
+        while(d.compareTo(BigInteger.ONE) == 0) {
             if(System.nanoTime() - startTime > TIME_LIMIT) { failed = true; break; }
             x = x.multiply(x).mod(n).add(c).mod(n);
             y = y.multiply(y).mod(n).add(c).mod(n);
             y = y.multiply(y).mod(n).add(c).mod(n);
             d = x.subtract(y).gcd(n);
-        } while(d.compareTo(BigInteger.ONE) == 0);
+        }
         return d;
     }
 
@@ -116,6 +144,56 @@ public class Main {
         BigInteger d = pollardRho(n);
         factorRho(d);
         factorRho(n.divide(d));
+    }
+
+    public static void factorBrent(BigInteger n) {
+        if (n.compareTo(BigInteger.ONE) == 0 || failed) return;
+        if (n.isProbablePrime(CERTAINTY_FACTOR)) {
+            factors.add(n);
+            return;
+        }
+        BigInteger d = pollardRhoBrent(n);
+        factorBrent(d);
+        factorBrent(n.divide(d));
+    }
+
+    public static BigInteger pollardRhoBrent(BigInteger n) {
+        if (n.mod(TWO).compareTo(BigInteger.ZERO) == 0) return TWO;
+        BigInteger y = new BigInteger(n.bitLength(), r);
+        BigInteger c = new BigInteger(n.bitLength(), r);
+        BigInteger m = new BigInteger(n.bitLength(), r);
+        BigInteger g = BigInteger.ONE;
+        BigInteger r = BigInteger.ONE;
+        BigInteger q = BigInteger.ONE;
+        BigInteger ys = BigInteger.ONE;
+        long startTime = System.nanoTime();
+        while(g.compareTo(BigInteger.ONE) == 0) {
+            if(System.nanoTime() - startTime > TIME_LIMIT_BRENT) { failed = true; break; }
+            BigInteger x = y;
+            for(BigInteger i = BigInteger.ZERO; i.compareTo(r) < 0; i = i.add(BigInteger.ONE))
+                y = y.multiply(y).mod(n).add(c).mod(n);
+            BigInteger k = BigInteger.ZERO;
+            while(k.compareTo(r) < 0 && g.compareTo(BigInteger.ONE) == 0) {
+                if(System.nanoTime() - startTime > TIME_LIMIT_BRENT) { failed = true; break; }
+
+                ys = y;
+                for(BigInteger i = BigInteger.ZERO; i.compareTo(m.min(r.subtract(k))) < 0; i = i.add(BigInteger.ONE)) {
+                    y = y.multiply(y).mod(n).add(c).mod(n);
+                    q = q.multiply(x.subtract(y)).mod(n);
+                }
+                g = q.gcd(n);
+                k = k.add(m);
+            }
+
+            r = r.multiply(TWO);
+            if(g.compareTo(n) == 0) {
+                ys = ys.multiply(ys).mod(n).add(c).mod(n);
+                g = x.subtract(ys).gcd(n);
+                if(g.compareTo(n) > 0)
+                    break;
+            }
+        }
+        return g;
     }
 
     private static void output(ArrayList<BigInteger> bigList) {
