@@ -18,10 +18,10 @@ public class Main {
     private final static BigInteger     TWO  = new BigInteger("2");
     private final static String         TEST_FILE = "test.in";
     private final static double         NANOSECONDS_TO_SECONDS = 1000000000.0;
-    private final static long           TIME_LIMIT = 224444444;
-    private final static long           TIME_LIMIT_BRENT = 204444444;
+    private final static long           TIME_LIMIT = 94444444;
+    private final static long           TIME_LIMIT_BRENT = 194444444;
     private final static int            BREAKPOINT_POLLARD = 10;
-    private final static int            BREAKPOINT_BRENT = 200;
+    private final static int            BREAKPOINT_BRENT = 15000;
     private final static int            CERTAINTY_FACTOR = 20;
     // Fields
     private static Kattio io = new Kattio(System.in, System.out);
@@ -99,15 +99,10 @@ public class Main {
             String word = io.getWord();
             BigInteger n = new BigInteger(word);
             // Input integer is already prime: Stop here.
-            //if(n.isProbablePrime(CERTAINTY_FACTOR)) { System.out.println(n + "\n"); continue; }
+            if(n.isProbablePrime(CERTAINTY_FACTOR)) { System.out.println(n + "\n"); continue; }
             // Break to Pollard's Rho if input integer is more than 10 digits long.
-            if(word.length() <= BREAKPOINT_POLLARD) trialDivision(n); else factorRho(n);
+            if(word.length() <= BREAKPOINT_POLLARD) trialDivision(n); else factorBrent(n);
 
-            if(failed && word.length() >= BREAKPOINT_BRENT) {
-                failed = false;
-                factors = new ArrayList<BigInteger>();
-                factorBrent(n);
-            }
 
             if(failed) {
                 fail();
@@ -187,10 +182,12 @@ public class Main {
 
             r = r.multiply(TWO);
             if(g.compareTo(n) == 0) {
-                ys = ys.multiply(ys).mod(n).add(c).mod(n);
-                g = x.subtract(ys).gcd(n);
-                if(g.compareTo(n) > 0)
-                    break;
+                while(true) {
+                    ys = ys.multiply(ys).mod(n).add(c).mod(n);
+                    g = x.subtract(ys).gcd(n);
+                    if(g.compareTo(BigInteger.ONE) > 0)
+                        break;
+                }
             }
         }
         return g;

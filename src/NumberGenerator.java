@@ -12,7 +12,7 @@ import java.util.Random;
 
 
 public class NumberGenerator {
-    private final static int BREAKPOINT = 90;
+    private final static int BREAKPOINT = 31;
     public static void main(String[] args) throws FileNotFoundException{
         PrintWriter writer = new PrintWriter("test.in");
         Random random = new Random();
