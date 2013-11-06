@@ -1,4 +1,3 @@
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -20,15 +19,13 @@ public class Main {
     private final static SecureRandom r = new SecureRandom();
     private static long a,b = 0;
     private static ArrayList<BigInteger> factors;
-    private final static long TIME_LIMIT = 214444444;
+    private final static long TIME_LIMIT = 224444444;
 
     public static void main(String[] args) {
-
         if(args.length != 0) {
             if(args[0].equals("test"))
                 test = true;
         }
-
         if(test) {
             try {
                 testFactoring();
@@ -37,51 +34,32 @@ public class Main {
             }
         } else
             kattisFactoring();
-
         io.close();
     }
 
     public static void testFactoring() throws IOException {
             System.out.println("------- TEST MODE -------\n");
             System.out.println("Factoring...");
-
             int score = 0;
             int total = 0;
-
             FileReader reader = new FileReader("test.in");
             BufferedReader br = new BufferedReader(reader);
             String word;
-
             long start = System.nanoTime();
             while((word = br.readLine()) != null) {
                 total++;
                 factors = new ArrayList<BigInteger>();
                 failed = false;
                 BigInteger n = new BigInteger(word);
-
-                if(n.isProbablePrime(5)) {
-                    continue;
-                }
-
-                if(word.length() <= 10)
-                    factor(n);
-                else
-                    factorRho(n);
-
-                if(failed) {
-                    continue;
-                } else {
-                    score++;
-                }
-
+                if(n.isProbablePrime(5)) continue;
+                if(word.length() <= 10) factor(n); else factorRho(n);
+                if(failed) continue; else  score++;
                 continue;
-
             }
 
             long end = System.nanoTime();
             long elapsedTime = end - start;
             double seconds = (double)elapsedTime / 1000000000.0;
-
             System.out.println("Managed to factor " + score +  " numbers out of " + total + ".");
             System.out.println("Total time for factoring " + total + " numbers: " + seconds + " seconds.");
             System.out.println("\n------- TEST END --------");
@@ -90,31 +68,17 @@ public class Main {
 
     public static void kattisFactoring() {
         while(io.hasMoreTokens()) {
-
             factors = new ArrayList<BigInteger>();
-
             failed = false;
             String word = io.getWord();
-
             BigInteger n = new BigInteger(word);
-
             if(n.isProbablePrime(5)) {
                 System.out.println(n + "\n");
                 continue;
             }
-
-            if(word.length() <= 10)
-                factor(n);
-            else
-                factorRho(n);
-
-            if(failed) {
-                fail();
-                continue;
-            }
-
+            if(word.length() <= 10) factor(n); else factorRho(n);
+            if(failed) { fail(); continue; }
             output(factors);
-
             continue;
         }
     }
@@ -165,10 +129,6 @@ public class Main {
             System.out.println(n);
         }
         System.out.println();
-    }
-
-    private static void fail() {
-        System.out.println("fail\n");
     }
 
     private static ArrayList<Long> longFactor(long n) {
@@ -280,18 +240,13 @@ public class Main {
             System.out.println("fail");
 
         }
-
         bigList.add(d);
-
-
-
         return bigList;
     }
 
     private static BigInteger f(BigInteger x, BigInteger n) {
         x = x.multiply(x);
         x = x.subtract(BigInteger.ONE.mod(n));
-
         return x;
     }
 
@@ -318,4 +273,6 @@ public class Main {
 
         return a;
     }
+
+    private static void fail() {System.out.println("fail\n");}
 }
