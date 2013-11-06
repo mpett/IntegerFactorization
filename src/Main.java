@@ -13,19 +13,22 @@ import java.io.FileReader;
  * To change this template use File | Settings | File Templates.
  */
 public class Main {
+    // Constants
+    private final static SecureRandom   r = new SecureRandom();
+    private final static BigInteger     TWO  = new BigInteger("2");
+    private final static String         TEST_FILE = "test.in";
+    private final static double         NANOSECONDS_TO_SECONDS = 1000000000.0;
+    private final static long           TIME_LIMIT = 244444444;
+    private final static int            BREAKPOINT = 10;
+    private final static int            CERTAINTY_FACTOR = 20;
+    // Fields
     private static Kattio io = new Kattio(System.in, System.out);
-    private static boolean failed,test = false;
-    private final static BigInteger TWO  = new BigInteger("2");
-    private final static SecureRandom r = new SecureRandom();
-    private static long a,b = 0;
     private static ArrayList<BigInteger> factors;
-    private final static long TIME_LIMIT = 244444444;
-    private final static long BREAKPOINT = 10;
+    private static boolean failed, test = false;
 
     public static void main(String[] args) {
         if(args.length != 0) {
-            if(args[0].equals("test"))
-                test = true;
+            if(args[0].equals("test")) test = true;
         }
         if(test) {
             try {
@@ -43,7 +46,7 @@ public class Main {
             System.out.println("Factoring...");
             int score = 0;
             int total = 0;
-            FileReader reader = new FileReader("test.in");
+            FileReader reader = new FileReader(TEST_FILE);
             BufferedReader br = new BufferedReader(reader);
             String word;
             long start = System.nanoTime();
@@ -53,20 +56,19 @@ public class Main {
                 failed = false;
                 BigInteger n = new BigInteger(word);
                 // Input integer is already prime: Stop here.
-                if(n.isProbablePrime(5)) continue;
+                if(n.isProbablePrime(CERTAINTY_FACTOR)) continue;
                 // Break to Pollard's Rho if input integer is more than 10 digits long.
-                if(word.length() <= BREAKPOINT) factor(n); else factorRho(n);
+                if(word.length() <= BREAKPOINT) trialDivision(n); else factorRho(n);
                 if(failed) {
-                    System.out.println("Test case #" + total + ": Failed");
+                    testOut("Failed", total);
                     continue;
                 } else {
-                    System.out.println("Test case #" + total + ": Success! :D");
+                    testOut("Success! :D", total);
                     score++;
                 }
-                continue;
             }
             long end = System.nanoTime();
-            double seconds = (double)(end - start) / 1000000000.0;
+            double seconds = (double)(end - start) / NANOSECONDS_TO_SECONDS;
             System.out.println("\nManaged to factor " + score +  " numbers out of " + total + ".");
             System.out.println("Total time for factoring " + total + " numbers: " + seconds + " seconds.");
             System.out.println("\n------- TEST END --------");
@@ -80,9 +82,9 @@ public class Main {
             String word = io.getWord();
             BigInteger n = new BigInteger(word);
             // Input integer is already prime: Stop here.
-            if(n.isProbablePrime(5)) { System.out.println(n + "\n"); continue; }
+            if(n.isProbablePrime(CERTAINTY_FACTOR)) { System.out.println(n + "\n"); continue; }
             // Break to Pollard's Rho if input integer is more than 10 digits long.
-            if(word.length() <= BREAKPOINT) factor(n); else factorRho(n);
+            if(word.length() <= BREAKPOINT) trialDivision(n); else factorRho(n);
             if(failed) { fail(); continue; }
             output(factors);
             continue;
@@ -108,7 +110,7 @@ public class Main {
 
     public static void factorRho(BigInteger n) {
         if (n.compareTo(BigInteger.ONE) == 0 || failed) return;
-        if (n.isProbablePrime(20)) {
+        if (n.isProbablePrime(CERTAINTY_FACTOR)) {
             factors.add(n);
             return;
         }
@@ -124,42 +126,15 @@ public class Main {
         System.out.println();
     }
 
-    private static ArrayList<Long> longFactor(long n) {
-        long d = 2;
-
-        ArrayList<Long> longList = new ArrayList<Long>();
-
-        while(n > 1) {
-            while (n % d == 0) {
-                longList.add(d);
-                n /= d;
-            }
-            d++;
-            if((d*d) > n) {
-                if(n > 1)
-                    longList.add(n);
-                break;
-            }
-        }
-
-        return longList;
-    }
-
-    private static void factor(BigInteger n) {
-        BigInteger d = new BigInteger("2");
-
+    private static void trialDivision(BigInteger n) {
+        BigInteger d = TWO;
         long startTime = System.nanoTime();
         while(n.compareTo(BigInteger.ONE) == 1) {
-            if(System.nanoTime() - startTime > TIME_LIMIT) {
-                failed = true;
-                return;
-            }
-
+            if(System.nanoTime() - startTime > TIME_LIMIT) { failed = true; return; }
             while(n.mod(d).equals(BigInteger.ZERO)) {
                 factors.add(d);
                 n = n.divide(d);
             }
-
             d = d.add(BigInteger.ONE);
             if(d.multiply(d).compareTo(n) == 1) {
                 if(n.compareTo(BigInteger.ONE) == 1)
@@ -169,58 +144,31 @@ public class Main {
         }
     }
 
-    private static void fermat(long n) {
-        long s = (long) Math.sqrt((double)n);
-        long u = (2 * s)  + 1;
-        long v = 1;
-        long r = (s * s) - n;
-
-
-        while(r != 0) {
-            while (r > 0) {
-                r -= v;
-                v += 2;
-            }
-            while (r < 0) {
-                r += u;
-                u += 2;
-            }
-        }
-
-        a = (u + v - 2) / 2;
-        b = (u - v) / 2;
-    }
-
     // Output 0 iff 2^n-1 is prime.
     private static BigInteger lucasLehmer(BigInteger n) {
-        BigInteger M = n.pow(2).subtract(new BigInteger("1"));
+        BigInteger M = n.pow(2).subtract(BigInteger.ONE);
         BigInteger s = new BigInteger("4");
-
         for(int i = 2; i <= n.intValue(); i++)
-            s = (s.multiply(s).subtract(new BigInteger("2"))).mod(M);
-
+            s = (s.multiply(s).subtract(TWO)).mod(M);
         return s;
     }
 
     private static BigInteger maximalPowerFactorization(BigInteger n, BigInteger d) {
         // e denotes maximum power
-        BigInteger e = new BigInteger("0");
+        BigInteger e = BigInteger.ZERO;
         BigInteger f = n;
-        while(f.mod(d).equals(new BigInteger("0"))) {
+        while(f.mod(d).equals(BigInteger.ZERO)) {
             f = f.divide(d);
-            e = e.add(new BigInteger("1"));
+            e = e.add(BigInteger.ZERO);
         }
-
         return f;
     }
 
-    private static ArrayList<BigInteger>  pollardRho2(BigInteger n) {
-        BigInteger d = new BigInteger("1");
-        BigInteger x = new BigInteger("2");
-        BigInteger y = new BigInteger("2");
-
+    private static ArrayList<BigInteger> pollardRho2(BigInteger n) {
+        BigInteger d = BigInteger.ONE;
+        BigInteger x = TWO;
+        BigInteger y = TWO;
         ArrayList<BigInteger> bigList = new ArrayList<BigInteger>();
-
         while(d.equals(BigInteger.ONE)) {
             x = f(x,n);
             y = f(f(y,n),n);
@@ -228,11 +176,7 @@ public class Main {
             g = g.abs();
             d = bigGCD(g, n);
         }
-
-        if(d.equals(n)) {
-            System.out.println("fail");
-
-        }
+        if(d.equals(n)) fail();
         bigList.add(d);
         return bigList;
     }
@@ -254,18 +198,7 @@ public class Main {
         return a;
     }
 
-    private static long gcd(long a, long b) {
-        if(a == 0 || b == 0)
-            throw new NumberFormatException("Input parameters must not be 0.");
+    private static void testOut(String condition, int total) { System.out.println("Test case #" + total + ": " + condition); }
 
-        while (b != 0) {
-            long tmp = b;
-            b = a % b;
-            a = tmp;
-        }
-
-        return a;
-    }
-
-    private static void fail() {System.out.println("fail\n");}
+    private static void fail() { System.out.println("fail\n"); }
 }
