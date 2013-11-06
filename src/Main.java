@@ -46,9 +46,8 @@ public class Main {
             System.out.println("Factoring...");
             int score = 0;
             int total = 0;
-            FileReader reader = new FileReader(TEST_FILE);
-            BufferedReader br = new BufferedReader(reader);
             String word;
+            BufferedReader br = new BufferedReader(new FileReader(TEST_FILE));
             long start = System.nanoTime();
             while((word = br.readLine()) != null) {
                 total++;
