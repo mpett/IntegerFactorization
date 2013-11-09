@@ -20,9 +20,9 @@ public class Main {
     private final static BigInteger     TWO  = new BigInteger("2");
     private final static String         TEST_FILE = "test.in";
     private final static double         NANOSECONDS_TO_SECONDS = 1000000000.0;
-    private final static long           TIME_LIMIT = 204444444;
+    private final static long           TIME_LIMIT = 214444444;
     private final static int            BITLENGTH_BREAKPOINT = 30;
-    private final static int            CERTAINTY_FACTOR = 5;
+    private final static int            CERTAINTY_FACTOR = 50;
     // Fields
     private static Kattio io = new Kattio(System.in, System.out);
     private static ArrayList<BigInteger> factors;
@@ -57,6 +57,7 @@ public class Main {
             factors = new ArrayList<BigInteger>();
             failed = false;
             BigInteger n = new BigInteger(word);
+            System.out.println("Bitlength: " + n.bitLength());
             // Input integer is already prime: Stop here.
             // if(n.isProbablePrime(CERTAINTY_FACTOR)) continue;
             // Break to Pollard's Rho if input integer is more than 10 digits long.
@@ -139,7 +140,6 @@ public class Main {
 
     public static BigInteger pollardRhoBrent(BigInteger n) {
         if (n.mod(TWO).compareTo(BigInteger.ZERO) == 0) return TWO;
-
         BigInteger y = new BigInteger(n.bitLength(), r);
         BigInteger c = new BigInteger(n.bitLength(), r);
         BigInteger m = new BigInteger(n.bitLength(), r);
