@@ -61,7 +61,7 @@ public class Main {
             }
 
             BitSet[] bitArray = gaussGF2(inputMatrix);
-            outputGauss(bitArray, inputMatrix[0].length);
+            outputGauss(bitArray, inputMatrix.length);
         }
         else
             kattisFactoring();
