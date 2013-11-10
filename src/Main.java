@@ -53,8 +53,15 @@ public class Main {
                         inputMatrix[i][j] = true;
                 }
             }
+
+            for(int i = 0; i < rows; i++) {
+                for(int j = 0; j < cols; j++) {
+                    System.err.print(inputMatrix[i][j] + " ");
+                } System.err.println();
+            }
+
             BitSet[] bitArray = gaussGF2(inputMatrix);
-            outputGauss(bitArray);
+            outputGauss(bitArray, inputMatrix[0].length);
         }
         else
             kattisFactoring();
@@ -231,6 +238,7 @@ public class Main {
         markedRows = new boolean[inputMatrix.length];
         for(int col = 0; col < bitArray.length; col++) {
             int nextSetBit = bitArray[col].nextSetBit(0);
+            if(nextSetBit == -1) continue;
             markedRows[nextSetBit] = true;
             for(int c = 0; c < bitArray.length; c++) {
                 if(c == col) continue;
@@ -240,8 +248,9 @@ public class Main {
         return bitArray;
     }
 
-    private static void outputGauss(BitSet[] bitArray) {
-        for(int i = 0; i < bitArray[0].length(); i++) {
+    private static void outputGauss(BitSet[] bitArray, int bitlength) {
+
+        for(int i = 0; i < bitlength; i++) {
             for(int j = 0; j < bitArray.length; j++) {
                 if(bitArray[j].get(i))
                     System.out.print(1 + " ");
