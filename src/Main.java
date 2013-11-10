@@ -248,8 +248,23 @@ public class Main {
         return bitArray;
     }
 
-    private static void outputGauss(BitSet[] bitArray, int bitlength) {
+    private static boolean[] getDependentRows(int[][] matrix) {
+        boolean[] dependent = new boolean[matrix.length];
+        for(int i = 0; i < matrix.length; i++) {
+            if(markedRows[i]) continue;
+            for(int j = 0; j < matrix[0].length; j++) {
+                if(matrix[i][j] == 0) continue;
+                for(int row = 0; row < matrix.length; row++) {
+                    for(int col = 0; col < matrix[0].length; col++) {
+                        if(matrix[row][j] == 1) dependent[row] = true;
+                    }
+                }
+            }
+        }
+        return dependent;
+    }
 
+    private static void outputGauss(BitSet[] bitArray, int bitlength) {
         for(int i = 0; i < bitlength; i++) {
             for(int j = 0; j < bitArray.length; j++) {
                 if(bitArray[j].get(i))
@@ -258,6 +273,27 @@ public class Main {
                     System.out.print(0 + " ");
             } System.out.println(" " + markedRows[i]);
         }
+
+        int[][] bitMatrix = convertMatrix(bitArray, bitlength);
+        boolean[] dependent = getDependentRows(bitMatrix);
+        System.out.print("Dependencies, rows: ");
+        for(int i = 0; i < dependent.length; i++) {
+            if(dependent[i])
+                System.out.print(i + " ");
+        } System.out.println();
+    }
+
+    private static int[][] convertMatrix(BitSet[] bitArray, int bitlength) {
+        int[][] matrix = new int[bitlength][bitArray.length];
+        for(int i = 0; i < bitlength; i++) {
+            for(int j = 0; j < bitArray.length; j++) {
+                if(bitArray[j].get(i))
+                    matrix[i][j] = 1;
+                else
+                    matrix[i][j] = 0;
+            }
+        }
+        return matrix;
     }
 
     private static void output(ArrayList<BigInteger> bigList) {
