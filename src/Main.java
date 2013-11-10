@@ -31,9 +31,6 @@ public class Main {
     private static boolean[] markedRows;
 
     public static void main(String[] args) {
-
-
-
         if(args.length != 0) {
             if(args[0].equals("test")) test = true;
             if(args[0].equals("matrix")) matrix = true;
@@ -56,7 +53,6 @@ public class Main {
                         inputMatrix[i][j] = true;
                 }
             }
-
             BitSet[] bitArray = gaussGF2(inputMatrix);
             outputGauss(bitArray);
         }
@@ -232,23 +228,15 @@ public class Main {
                 }
             }
         }
-
         markedRows = new boolean[inputMatrix.length];
-
-        System.err.println(bitArray[0].length());
-
         for(int col = 0; col < bitArray.length; col++) {
             int nextSetBit = bitArray[col].nextSetBit(0);
             markedRows[nextSetBit] = true;
             for(int c = 0; c < bitArray.length; c++) {
-                if(c == col)
-                    continue;
-                if(bitArray[c].get(nextSetBit)) {
-                    bitArray[c].xor(bitArray[col]);
-                }
+                if(c == col) continue;
+                if(bitArray[c].get(nextSetBit)) bitArray[c].xor(bitArray[col]);
             }
         }
-
         return bitArray;
     }
 
