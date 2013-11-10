@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.security.SecureRandom;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.BitSet;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,15 +23,20 @@ public class Main {
     private final static double         NANOSECONDS_TO_SECONDS = 1000000000.0;
     private final static long           TIME_LIMIT = 214444444;
     private final static int            BITLENGTH_BREAKPOINT = 30;
-    private final static int            CERTAINTY_FACTOR = 50;
+    private final static int            CERTAINTY_FACTOR = 5;
     // Fields
     private static Kattio io = new Kattio(System.in, System.out);
     private static ArrayList<BigInteger> factors;
-    private static boolean failed, test = false;
+    private static boolean failed, test, matrix = false;
+    private static boolean[] markedRows;
 
     public static void main(String[] args) {
+
+
+
         if(args.length != 0) {
             if(args[0].equals("test")) test = true;
+            if(args[0].equals("matrix")) matrix = true;
         }
         if(test) {
             try {
@@ -38,7 +44,23 @@ public class Main {
             } catch (IOException e) {
                 System.err.println("File not found");
             }
-        } else
+        } else if(matrix) {
+            int rows = io.getInt();
+            int cols = io.getInt();
+            boolean[][] inputMatrix = new boolean[rows][cols];
+            for(int i = 0; i < rows; i++) {
+                for(int j = 0; j < cols; j++) {
+                    if(io.getInt() == 0)
+                        inputMatrix[i][j] = false;
+                    else
+                        inputMatrix[i][j] = true;
+                }
+            }
+
+            BitSet[] bitArray = gaussGF2(inputMatrix);
+            outputGauss(bitArray);
+        }
+        else
             kattisFactoring();
         io.close();
     }
@@ -57,11 +79,10 @@ public class Main {
             factors = new ArrayList<BigInteger>();
             failed = false;
             BigInteger n = new BigInteger(word);
-            System.out.println("Bitlength: " + n.bitLength());
             // Input integer is already prime: Stop here.
             // if(n.isProbablePrime(CERTAINTY_FACTOR)) continue;
             // Break to Pollard's Rho if input integer is more than 10 digits long.
-            if(n.bitLength() <= BITLENGTH_BREAKPOINT) trialDivision(n); else factorBrent(n);
+            if(n.bitLength() <= BITLENGTH_BREAKPOINT) trialDivision(n); else factorRho(n);
             if(failed) {
                 testOut("Failed", total);
                 continue;
@@ -112,10 +133,16 @@ public class Main {
 
     public static void factorRho(BigInteger n) {
         if (n.compareTo(ONE) == 0 || failed) return;
+        // Return if we have found a non-trivial factor.
         if (n.isProbablePrime(CERTAINTY_FACTOR)) {
             factors.add(n);
             return;
+            // Branch to trial division if n is small.
+        } else if (n.bitLength() <= BITLENGTH_BREAKPOINT) {
+            trialDivision(n);
+            return;
         }
+        // Recursion!
         BigInteger d = pollardRho(n);
         factorRho(d);
         factorRho(n.divide(d));
@@ -192,6 +219,47 @@ public class Main {
                     factors.add(n);
                 break;
             }
+        }
+    }
+
+    private static BitSet[] gaussGF2(boolean[][] inputMatrix) {
+        BitSet[] bitArray = new BitSet[inputMatrix[0].length];
+        for(int i = 0; i < inputMatrix[0].length; i++) {
+            bitArray[i] = new BitSet(inputMatrix.length);
+            for(int j = 0; j < inputMatrix.length; j++) {
+                if(inputMatrix[j][i]) {
+                    bitArray[i].set(j);
+                }
+            }
+        }
+
+        markedRows = new boolean[inputMatrix.length];
+
+        System.err.println(bitArray[0].length());
+
+        for(int col = 0; col < bitArray.length; col++) {
+            int nextSetBit = bitArray[col].nextSetBit(0);
+            markedRows[nextSetBit] = true;
+            for(int c = 0; c < bitArray.length; c++) {
+                if(c == col)
+                    continue;
+                if(bitArray[c].get(nextSetBit)) {
+                    bitArray[c].xor(bitArray[col]);
+                }
+            }
+        }
+
+        return bitArray;
+    }
+
+    private static void outputGauss(BitSet[] bitArray) {
+        for(int i = 0; i < bitArray[0].length(); i++) {
+            for(int j = 0; j < bitArray.length; j++) {
+                if(bitArray[j].get(i))
+                    System.out.print(1 + " ");
+                else
+                    System.out.print(0 + " ");
+            } System.out.println(" " + markedRows[i]);
         }
     }
 
