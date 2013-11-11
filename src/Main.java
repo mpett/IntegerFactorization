@@ -54,9 +54,10 @@ public class Main {
                 }
             }
 
+            System.out.println("INPUT MATRIX:");
             for(int i = 0; i < rows; i++) {
                 for(int j = 0; j < cols; j++) {
-                    System.err.print(inputMatrix[i][j] + " ");
+                    if(inputMatrix[i][j]) System.out.print(1 + " "); else System.out.print(0 + " ");
                 } System.err.println();
             }
 
@@ -211,8 +212,8 @@ public class Main {
         BigInteger d = TWO;
         long startTime = System.nanoTime();
         while(n.compareTo(ONE) == 1) {
-            if(System.nanoTime() - startTime > TIME_LIMIT) { failed = true; return; }
             while(n.mod(d).equals(ZERO)) {
+                if(System.nanoTime() - startTime > TIME_LIMIT) { failed = true; return; }
                 factors.add(d);
                 n = n.divide(d);
             }
@@ -245,26 +246,32 @@ public class Main {
                 if(bitArray[c].get(nextSetBit)) bitArray[c].xor(bitArray[col]);
             }
         }
+        markedRows[1] = false;
         return bitArray;
     }
 
-    private static boolean[] getDependentRows(int[][] matrix) {
+    private static boolean[] getDependentRows(int[][] matrix, int test) {
+        int count = 0;
         boolean[] dependent = new boolean[matrix.length];
         for(int i = 0; i < matrix.length; i++) {
             if(markedRows[i]) continue;
+            if(count != test) {
+                count++;
+                continue;
+            }
             for(int j = 0; j < matrix[0].length; j++) {
                 if(matrix[i][j] == 0) continue;
-                for(int row = 0; row < matrix.length; row++) {
-                    for(int col = 0; col < matrix[0].length; col++) {
-                        if(matrix[row][j] == 1) dependent[row] = true;
-                    }
-                }
+                for(int row = 0; row < matrix.length; row++)
+                    if(matrix[row][j] == 1) dependent[row] = true;
             }
+            break;
         }
         return dependent;
     }
 
     private static void outputGauss(BitSet[] bitArray, int bitlength) {
+
+        System.out.println("\nSOLUTION MATRIX:");
         for(int i = 0; i < bitlength; i++) {
             for(int j = 0; j < bitArray.length; j++) {
                 if(bitArray[j].get(i))
@@ -275,8 +282,10 @@ public class Main {
         }
 
         int[][] bitMatrix = convertMatrix(bitArray, bitlength);
-        boolean[] dependent = getDependentRows(bitMatrix);
-        System.out.print("Dependencies, rows: ");
+
+        boolean[] dependent = getDependentRows(bitMatrix,1);
+
+        System.out.print("\nDependencies, rows: ");
         for(int i = 0; i < dependent.length; i++) {
             if(dependent[i])
                 System.out.print(i + " ");
